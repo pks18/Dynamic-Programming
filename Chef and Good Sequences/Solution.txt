@@ -1,0 +1,96 @@
+dardev
+Sep '19
+dp[i][j]=dp[i−1][j]+dp[i−1][j−1]⋅cnt[i]
+
+I am demonstrating the DP in this post. Consider this example: 3 3 2 7 2 5 5.
+
+It can be rewritten as 2 2 3 3 5 5 7. That is (2 repeated 2 times) (3 repeated 2 times) (5 repeated 2 times) and (7 repeated once).
+
+In this case, the minimum size of the set can be 0 (Empty set). Maximum size can only be 4 (irrespective of the value of k).
+
+So if k is 0: Number of possible sets is 1.
+What if k is 1: We can either select 2 or 3 or 5 or 7 as our sole element. There are 2 ways to select 2, 2 ways to select 3, 2 ways to select 5, and 1 way to select 7. The total number of ways is 7. Here is how things look like when k is 1:
+
+|2|3|5|7|
+|2|2|2|1|
+
+What if k is 2? Here is where things get interesting since recurrence is established.
+
+Let’s consider the first one element (2), is it possible to generate a set of two elements with it? Ans: No. {2,2} is an invalid set. Here is what the table looks like now:
+
+|2|3|5|7|
+|2|2|2|1|
+|0|
+
+What if we consider the first two elements (2,3). Can we construct a set with 2 elements? Yes! How do we do that?
+Step 1: Take all sets with one element {2}. There are “Two such sets”. Refer to Second Row, First Column.
+Step 2: To all the above sets, add a {3}. How many ways to do it? There are 2 “3” in the input. So there are two ways to do it.
+Step 3: Thus, there are 2 starting sets from step 1, and we can add 3 in 2 ways from step 2. Total possible sets with 2 elements 2,3 are 4. Recurrence will become more clear as we proceed with this exercise
+
+Here is what the DP table looks like:
+|2|3|5|7|
+|2|2|2|1|
+|0|4|
+
+Next, is it possible to construct a two-element set with 2,3,5? (This set MUST contain a five or else it becomes a repetition of the previous case) Yes! In how many ways?
+Step 1: Select either a 2 or a 3. This can be done in 2+2 ways. These 2+2 ways can be obtained as the sum of the first and the second column in the first row.
+Step 2: Select a 5. This can be done in 2 ways.
+Step 3: Obtain total possible sets as the product of step 1 and 2. That is 4*2 = 8 ways.
+Here is what the table looks like now:
+|2|3|5|7|
+|2|2|2|1|
+|0|4|8|
+
+Now to the final step with k = 2. We are to construct a two-element set with 2,3,5,7 such that it necessarily contains 7.
+Step 1: There are 2+2+2 ways (6 ways) to select one element from 2,3,5
+Step 2: There is one way to select the 7.
+Step 3: Total sets = 6*1 = 6
+
+Our table looks like
+|2|3|5|7|
+|2|2|2|1|
+|0|4|8|6|
+
+Let’s take a pause here.
+
+There is exactly one way to generate a null set.
+There are 2+2+2+1 ways to generate a set with one element. 7 ways.
+There are 0+4+8+6 ways to generate a set with two elements. 18 ways.
+So if k = 2. If the maximum number of elements was 2, we could have generated 1+7+18 sets. 26 sets!
+
+What if k was 3?
+Our table looks like
+|2|3|5|7|
+|2|2|2|1|
+|0|4|8|6|
+|0|0|8|12|
+
+Explanation: We cannot generate three-element sets from just 2 and 3. But if we are given 2, 3, 5 - we can take two-element set containing 2 and 3 (total 4 in number from row 3 column 2) and multiply it with the number of possible ways to introduce 5 (2 ways). This becomes 4*2 = 8.
+Similarly, we can generate three-element sets with 2,3,5,7 that necessarily contains 7 in (4+8)*1 ways = 12 ways.
+
+So if k was 3 we can generate an additional 20 sets. Yielding a total of (26+20) sets. 46 sets.
+
+What if k was 4 or greater. In that case, we can generate additional sets containing all elements.
+
+Our table looks like
+|2|3|5|7|
+|2|2|2|1|
+|0|4|8|6|
+|0|0|8|12|
+|0|0|0|8|
+
+If we are to find total elements. Add every call value except the first row and then add one to it to account for the null set. The answer becomes 53+1 = 54.
+
+Let us get rid of the first row in our DP and then formulate the principle:
+
+|2|2|2|1|
+|0|4|8|6|
+|0|0|8|12|
+|0|0|0|8|
+
+Here is the final DP formula:
+
+First row to contain frequency of elements. 2, 2, 2, 1 in this case.
+Starting second row, For any cell Cij, add all elements in previous row (i-1 row) until j-1 column and multiply it with C0j
+Let me know if it’s not clear.
+Here is the implementation: https://www.codechef.com/viewsolution/26659107 42

@@ -1,0 +1,179 @@
+(function() {
+  if ('Discourse' in window && Discourse.__container__) {
+    Discourse.__container__
+      .lookup("service:theme-settings")
+      .registerSettings(4, {"show_in_options_dropdown":false,"only_available_to_staff":true,"meet_jitsi_domain":"meet.jit.si","button_icon":"video","svg_icons":"video"});
+  }
+})();
+(function() {
+  if ('Ember' in window) {
+    Ember.TEMPLATES["modal/insert-jitsi"] = Ember.HTMLBars.template({"id":null,"block":"{\"symbols\":[],\"statements\":[[4,\"d-modal-body\",null,[[\"title\",\"class\"],[[28,\"theme-prefix\",[4,\"modal.title\"],null],\"insert-jitsi\"]],{\"statements\":[[7,\"div\",true],[10,\"class\",\"insert-jitsi-form\"],[8],[0,\"\\n  \"],[7,\"div\",true],[10,\"class\",\"insert-jitsi-input\"],[8],[0,\"\\n    \"],[7,\"label\",true],[8],[0,\"\\n      \"],[1,[28,\"theme-i18n\",[4,\"room_label\"],null],false],[0,\"\\n    \"],[9],[0,\"\\n    \"],[1,[28,\"text-field\",null,[[\"value\"],[[24,[\"jitsiRoom\"]]]]],false],[0,\"\\n    \"],[7,\"div\",true],[10,\"class\",\"desc\"],[8],[1,[28,\"theme-i18n\",[4,\"modal.room_field_description\"],null],false],[9],[0,\"\\n  \"],[9],[0,\"\\n\\n  \"],[7,\"div\",true],[10,\"class\",\"insert-jitsi-input\"],[8],[0,\"\\n    \"],[7,\"label\",true],[8],[0,\"\\n      \"],[1,[28,\"theme-i18n\",[4,\"button_text_label\"],null],false],[0,\"\\n    \"],[9],[0,\"\\n    \"],[1,[28,\"text-field\",null,[[\"value\",\"placeholderKey\"],[[24,[\"buttonText\"]],[28,\"theme-prefix\",[4,\"launch_jitsi\"],null]]]],false],[0,\"\\n  \"],[9],[0,\"\\n\\n  \"],[7,\"div\",true],[10,\"class\",\"insert-jitsi-input\"],[8],[0,\"\\n    \"],[7,\"label\",true],[10,\"class\",\"checkbox-label\"],[8],[0,\"\\n      \"],[1,[28,\"input\",null,[[\"type\",\"checked\"],[\"checkbox\",[24,[\"mobileIframe\"]]]]],false],[0,\"\\n      \"],[1,[28,\"theme-i18n\",[4,\"modal.mobile_iframe\"],null],false],[0,\"\\n    \"],[9],[0,\"\\n  \"],[9],[0,\"\\n\\n  \"],[7,\"div\",true],[10,\"class\",\"insert-bbb-input\"],[8],[0,\"\\n    \"],[7,\"label\",true],[10,\"class\",\"checkbox-label\"],[8],[0,\"\\n      \"],[1,[28,\"input\",null,[[\"type\",\"checked\"],[\"checkbox\",[24,[\"desktopIframe\"]]]]],false],[0,\"\\n      \"],[1,[28,\"theme-i18n\",[4,\"modal.desktop_iframe\"],null],false],[0,\"\\n    \"],[9],[0,\"\\n  \"],[9],[0,\"\\n\\n\"],[9],[0,\"\\n\"]],\"parameters\":[]},null],[0,\"\\n\"],[7,\"div\",true],[10,\"class\",\"modal-footer\"],[8],[0,\"\\n  \"],[1,[28,\"d-button\",null,[[\"class\",\"disabled\",\"label\",\"action\"],[\"btn-primary\",[24,[\"insertDisabled\"]],[28,\"theme-prefix\",[4,\"modal.insert\"],null],[28,\"action\",[[23,0,[]],\"insert\"],null]]]],false],[0,\"\\n  \"],[1,[28,\"d-button\",null,[[\"class\",\"label\",\"action\"],[\"btn-danger\",[28,\"theme-prefix\",[4,\"modal.cancel\"],null],[28,\"action\",[[23,0,[]],\"cancel\"],null]]]],false],[0,\"\\n\"],[9]],\"hasEval\":false}","meta":{}});
+  }
+})();
+
+define("discourse/initializers/insert-jitsi", ["exports", "discourse/lib/plugin-api", "discourse/lib/show-modal", "discourse/lib/load-script", "discourse-common/lib/icon-library"], function (exports, _pluginApi, _showModal, _loadScript, _iconLibrary) {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  var __theme_name__ = "Discourse Jitsi";
+  var settings = Discourse.__container__.lookup("service:theme-settings").getObjectForTheme(4);
+  var themePrefix = function themePrefix(key) {
+    return "theme_translations.4." + key;
+  };
+
+
+  function launchJitsi($elem, user) {
+    var data = $elem.data(),
+        site = Discourse.__container__.lookup("site:main"),
+        domain = settings.meet_jitsi_domain;
+
+    if (site.mobileView && data.mobileIframe === false || !site.mobileView && data.desktopIframe === false) {
+      window.location.href = "https://" + domain + "/" + data.room;
+      return false;
+    }
+
+    (0, _loadScript.default)("https://meet.jit.si/external_api.js").then(function () {
+      var options = {
+        roomName: data.room,
+        height: 450,
+        parentNode: $elem.parent()[0],
+        interfaceConfigOverwrite: {
+          DEFAULT_REMOTE_DISPLAY_NAME: ""
+        }
+      };
+
+      var jitsiAPI = new JitsiMeetExternalAPI(domain, options);
+      $elem.hide();
+
+      if (user.username) {
+        jitsiAPI.executeCommand("displayName", user.username);
+      }
+
+      jitsiAPI.addEventListener("videoConferenceLeft", function () {
+        $elem.show();
+        $elem.next().remove();
+      });
+    });
+  }
+
+  function attachButton($elem, user) {
+    var buttonLabel = $elem.data("label") || I18n.t(themePrefix("launch_jitsi"));
+
+    $elem.html("<button class='launch-jitsi btn'>" + (0, _iconLibrary.iconHTML)(settings.button_icon) + " " + buttonLabel + "</button>");
+    $elem.find("button").on("click", function () {
+      return launchJitsi($elem, user);
+    });
+  }
+
+  function attachJitsi($elem, helper) {
+    if (helper) {
+      var currentUser = helper.widget.currentUser;
+      $elem.find("[data-wrap=discourse-jitsi]").each(function (idx, val) {
+        attachButton($(val), currentUser);
+      });
+    }
+  }
+
+  exports.default = {
+    name: "insert-jitsi",
+
+    initialize: function initialize() {
+      (0, _pluginApi.withPluginApi)("0.8.31", function (api) {
+        var currentUser = api.getCurrentUser();
+
+        if (settings.show_in_options_dropdown) {
+          if (settings.only_available_to_staff && currentUser && !currentUser.staff) {
+            // do nothing if limited to staff
+          } else {
+            api.modifyClass("controller:composer", {
+              actions: {
+                insertJitsiModal: function insertJitsiModal() {
+                  (0, _showModal.default)("insert-jitsi").setProperties({
+                    toolbarEvent: this.get("toolbarEvent")
+                  });
+                }
+              }
+            });
+
+            api.addToolbarPopupMenuOptionsCallback(function (controller) {
+              return {
+                id: "insert_jitsi_button",
+                icon: settings.button_icon,
+                action: "insertJitsiModal",
+                label: themePrefix("composer_title")
+              };
+            });
+          }
+        } else {
+          api.onToolbarCreate(function (toolbar) {
+            if (settings.only_available_to_staff && currentUser && !currentUser.staff) {
+              return;
+            }
+
+            toolbar.addButton({
+              title: themePrefix("composer_title"),
+              id: "insertJitsi",
+              group: "insertions",
+              icon: settings.button_icon,
+              perform: function perform(e) {
+                return (0, _showModal.default)("insert-jitsi").setProperties({ toolbarEvent: e });
+              }
+            });
+          });
+        }
+
+        api.decorateCooked(attachJitsi, { id: "discourse-jitsi" });
+      });
+    }
+  };
+});
+define("discourse-insert-jitsi/controllers/insert-jitsi", ["exports", "@ember/controller", "discourse/mixins/modal-functionality"], function (exports, _controller, _modalFunctionality) {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  var __theme_name__ = "Discourse Jitsi";
+  var settings = Discourse.__container__.lookup("service:theme-settings").getObjectForTheme(4);
+  var themePrefix = function themePrefix(key) {
+    return "theme_translations.4." + key;
+  };
+  exports.default = _controller.default.extend(_modalFunctionality.default, {
+    mobileIframe: true,
+    desktopIframe: true,
+
+    keyDown: function keyDown(e) {
+      if (e.keyCode === 13) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    },
+    onShow: function onShow() {
+      this.setProperties({
+        jitsiRoom: "",
+        buttonText: ""
+      });
+    },
+    randomID: function randomID() {
+      return Math.random().toString(36).slice(-8);
+    },
+
+
+    actions: {
+      insert: function insert() {
+        var btnTxt = this.buttonText ? " label=\"" + this.buttonText + "\"" : "";
+        var roomID = this.jitsiRoom || this.randomID();
+
+        var text = "[wrap=discourse-jitsi room=\"" + roomID + "\"" + btnTxt + " mobileIframe=\"" + this.mobileIframe + "\" desktopIframe=\"" + this.desktopIframe + "\"][/wrap]";
+        this.toolbarEvent.addText(text);
+        this.send("closeModal");
+      },
+      cancel: function cancel() {
+        this.send("closeModal");
+      }
+    }
+  });
+});

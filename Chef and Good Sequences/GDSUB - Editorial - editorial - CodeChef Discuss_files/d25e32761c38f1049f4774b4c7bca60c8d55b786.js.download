@@ -1,0 +1,24 @@
+define("discourse/pre-initializers/theme-4-translations", ["exports"], function (exports) {
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.default = {
+    name: "theme-4-translations",
+    initialize: function initialize() {
+      /* Translation data for theme 4 (en)*/
+      var data = { "en": { "composer_title": "Discourse Jitsi", "room_label": "Jitsi room ID", "button_text_label": "Button label", "launch_jitsi": "Start Video Conference", "modal": { "room_field_description": "Enter an ID for your room (or leave empty to use a randomly generated ID).", "insert": "Insert", "cancel": "Cancel", "title": "Add Jitsi Integration", "mobile_iframe": "Show in an iframe on mobile devices", "desktop_iframe": "Show in an iframe on desktop devices" } } };
+
+      for (var lang in data) {
+        var cursor = I18n.translations;
+        var _arr = [lang, "js", "theme_translations"];
+        for (var _i = 0; _i < _arr.length; _i++) {
+          var key = _arr[_i];
+          cursor = cursor[key] = cursor[key] || {};
+        }
+        cursor[4] = data[lang];
+      }
+    }
+  };
+});
